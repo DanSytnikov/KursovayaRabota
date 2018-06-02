@@ -8,24 +8,24 @@ public class Sell {
 
     @SerializedName("Quantity")
     @Expose
-    private Double quantity;
+    private Float quantity;
     @SerializedName("Rate")
     @Expose
-    private Double rate;
+    private Float rate;
 
-    public Double getQuantity() {
+    public Float getQuantity() {
         return quantity;
     }
 
-    public void setQuantity(Double quantity) {
+    public void setQuantity(Float quantity) {
         this.quantity = quantity;
     }
 
-    public Double getRate() {
+    public Float getRate() {
         return rate;
     }
 
-    public void setRate(Double rate) {
+    public void setRate(Float rate) {
         this.rate = rate;
     }
 

@@ -1,14 +1,14 @@
 package com.example.user.kursach;
 
+import android.graphics.Color;
 import android.os.AsyncTask;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
-import android.widget.ImageView;
 
-import com.github.mikephil.charting.charts.BarChart;
-import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.charts.HorizontalBarChart;
+import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.components.YAxis;
 import com.github.mikephil.charting.data.BarData;
 import com.github.mikephil.charting.data.BarDataSet;
@@ -18,7 +18,6 @@ import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
 
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,7 +36,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        BarChart chart = (BarChart) findViewById(R.id.chart);
+        //HorizontalBarChart chart = (HorizontalBarChart) findViewById(R.id.chart);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -46,18 +45,6 @@ public class MainActivity extends AppCompatActivity {
                 .addConverterFactory(GsonConverterFactory.create()) //Конвертер, необходимый для преобразования JSON'а в объекты
                 .build();
         getInterface = retrofit.create(GETinterface.class); //Создаем объект, при помощи которого будем выполнять запросы
-
-/*
-        YourData[] dataObjects = ...;
-
-        List<Entry> entries = new ArrayList<Entry>();
-
-        for (YourData data : dataObjects) {
-
-            // turn your data into Entry objects
-            entries.add(new Entry(data.getValueX(), data.getValueY()));
-        }*/
-
     }
 
     public void onClick(View view) {
@@ -66,18 +53,25 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    class BittrexAPI extends AsyncTask<Void, Void, Response<Bittrex>> {
+    class BittrexAPI extends AsyncTask<Void, Response<Bittrex>, Response<Bittrex>> {
 
         @Override
         protected Response<Bittrex> doInBackground(Void... voids) {
             Log.d("RUN", "Thread started.");
 
-            Call<Bittrex> responseCall = getInterface.getData("USDT-BTC", "both");
             Response<Bittrex> res = null;
-            try {
-                res = responseCall.execute();
-            } catch (IOException e) {
-                e.printStackTrace();
+            while (!isCancelled()) {
+                try {
+                    Call<Bittrex> responseCall = getInterface.getData("USDT-BTC", "both");
+                    res = responseCall.execute();
+                    publishProgress(res);
+                    Thread.sleep(3000);
+                    Log.d("CYCLE", "+1");
+                } catch (IOException e) {
+                    Log.e("ERROR", e.toString());
+                } catch (InterruptedException e) {
+                    Log.e("ERROR", e.toString());
+                }
             }
 
             Log.d("RUN", "Resp result: " + res.code());
@@ -85,40 +79,76 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @Override
-        protected void onPostExecute(Response<Bittrex> bittrexResponse) {
-            super.onPostExecute(bittrexResponse);
-            data = bittrexResponse.body();
+        protected void onProgressUpdate(Response<Bittrex>... bittrexResponse) {
+            super.onProgressUpdate(bittrexResponse);
+            data = bittrexResponse[0].body();
             List<Buy> buyList = data.getResult().getBuy();
             List<Sell> sellList = data.getResult().getSell();
-            List<BarEntry> entries = new ArrayList<BarEntry>();
+            float maxQuan = 0;
+
+
+            List<BarEntry> entries = new ArrayList<>();
+            List<BarEntry> entries1 = new ArrayList<>();
             for (Buy i : buyList) {
-                Float quan = new Float(i.getQuantity());
-                Float rate = new Float(i.getRate());
-                entries.add( new BarEntry(quan, rate));
+                Float quan = i.getQuantity();
+                Float rate = i.getRate();
+                if(quan> maxQuan){
+                    maxQuan = quan;
+                }
+                entries.add(new BarEntry(rate, quan));
+
+            }
+            for (Sell i : sellList) {
+                Float quan = i.getQuantity();
+                Float rate = i.getRate();
+                if (quan > maxQuan){
+                    maxQuan = quan;
+                }
+                entries1.add(new BarEntry(rate, quan));
             }
 
 
-            BarDataSet dataSet = new BarDataSet(entries, "Label"); // add entries to dataset
+            BarDataSet dataSetBuy = new BarDataSet(entries, "Label");
+            BarDataSet dataSetSell = new BarDataSet(entries1, "Label");
+            dataSetSell.setColor(Color.GREEN);
+            BarData barDataSell = new BarData(dataSetSell);
+            HorizontalBarChart chartSell = findViewById(R.id.sellchart);
+            dataSetBuy.setColor(Color.RED);
 
-            dataSet.setColor(R.color.colorAccent);
-            BarData barData = new BarData(dataSet);
+            BarData barDataBuy = new BarData(dataSetBuy);
+            dataSetSell.setAxisDependency(YAxis.AxisDependency.RIGHT);
+            HorizontalBarChart chartBuy = findViewById(R.id.buychart);
 
-            BarChart chart = findViewById(R.id.chart);
+            chartBuy.setData(barDataBuy);
+            chartSell.setData(barDataSell);
+            chartSell.getAxisLeft().setInverted(true);
+            chartSell.getAxisRight().setInverted(true);
+            YAxis yAxis = chartBuy.getAxisLeft();
+            yAxis.setAxisMaximum(maxQuan);
 
-            chart.setData(barData);
-            YAxis leftAxis = chart.getAxisLeft();
-            YAxis rightAxis = chart.getAxisRight();
+            YAxis yAxisSell = chartSell.getAxisRight();
+            yAxisSell.setAxisMaximum(maxQuan);
+            //chartBuy.getAxisRight().setEnabled(false);
+            chartBuy.getAxisLeft().setEnabled(false);
+            chartSell.getAxisRight().setEnabled(false);
+            chartBuy.getLegend().setEnabled(false);
+            chartSell.getLegend().setEnabled(false);
 
-            leftAxis = chart.getAxis(YAxis.AxisDependency.LEFT);
-            leftAxis.setGranularity(10);
-            chart.setDragEnabled(true);
-            chart.setHighlightFullBarEnabled(true);
+            /*chart.setDragEnabled(true);
+            //chart.setHighlightFullLineEnabled(true);
             chart.setScaleXEnabled(true);
             chart.setScaleYEnabled(true);
             chart.setTouchEnabled(true);
             chart.setPinchZoom(true);
-            chart.setScaleEnabled(true);
-            chart.invalidate(); // refresh
+            chart.setScaleEnabled(true);*/
+            chartBuy.invalidate(); // refresh
+            chartSell.invalidate();
+        }
+
+        @Override
+        protected void onPostExecute(Response<Bittrex> bittrexResponse) {
+            super.onPostExecute(bittrexResponse);
+
         }
     }
 }
