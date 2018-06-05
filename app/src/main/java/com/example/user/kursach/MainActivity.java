@@ -8,6 +8,7 @@ import android.util.Log;
 import android.view.View;
 
 import com.github.mikephil.charting.charts.HorizontalBarChart;
+import com.github.mikephil.charting.components.Description;
 import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.components.YAxis;
 import com.github.mikephil.charting.data.BarData;
@@ -45,6 +46,8 @@ public class MainActivity extends AppCompatActivity {
                 .addConverterFactory(GsonConverterFactory.create()) //Конвертер, необходимый для преобразования JSON'а в объекты
                 .build();
         getInterface = retrofit.create(GETinterface.class); //Создаем объект, при помощи которого будем выполнять запросы
+        BittrexAPI bittrexAPI = new BittrexAPI();
+        bittrexAPI.execute();
     }
 
     public void onClick(View view) {
@@ -118,13 +121,17 @@ public class MainActivity extends AppCompatActivity {
             BarData barDataBuy = new BarData(dataSetBuy);
             dataSetSell.setAxisDependency(YAxis.AxisDependency.RIGHT);
             HorizontalBarChart chartBuy = findViewById(R.id.buychart);
-
+            //chartBuy.getAxisRight().setDrawLabels(false);
+            chartBuy.setDescription(null);
+            chartSell.setDescription(null);
             chartBuy.setData(barDataBuy);
             chartSell.setData(barDataSell);
             chartSell.getAxisLeft().setInverted(true);
             chartSell.getAxisRight().setInverted(true);
-            YAxis yAxis = chartBuy.getAxisLeft();
-            yAxis.setAxisMaximum(maxQuan);
+            YAxis yAxisBuy = chartBuy.getAxisLeft();
+            chartBuy.getAxisRight().setAxisMaximum(maxQuan);
+            chartSell.getAxisLeft().setAxisMaximum(maxQuan);
+            yAxisBuy.setAxisMaximum(maxQuan);
 
             YAxis yAxisSell = chartSell.getAxisRight();
             yAxisSell.setAxisMaximum(maxQuan);
