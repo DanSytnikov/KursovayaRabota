@@ -37,7 +37,6 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        //HorizontalBarChart chart = (HorizontalBarChart) findViewById(R.id.chart);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -61,7 +60,6 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected Response<Bittrex> doInBackground(Void... voids) {
             Log.d("RUN", "Thread started.");
-
             Response<Bittrex> res = null;
             while (!isCancelled()) {
                 try {
@@ -70,9 +68,7 @@ public class MainActivity extends AppCompatActivity {
                     publishProgress(res);
                     Thread.sleep(3000);
                     Log.d("CYCLE", "+1");
-                } catch (IOException e) {
-                    Log.e("ERROR", e.toString());
-                } catch (InterruptedException e) {
+                } catch (IOException | InterruptedException e) {
                     Log.e("ERROR", e.toString());
                 }
             }
@@ -88,15 +84,18 @@ public class MainActivity extends AppCompatActivity {
             List<Buy> buyList = data.getResult().getBuy();
             List<Sell> sellList = data.getResult().getSell();
             float maxQuan = 0;
-
-
+            float minSell = 999999999;
+            float maxBuy = 0;
             List<BarEntry> entries = new ArrayList<>();
             List<BarEntry> entries1 = new ArrayList<>();
             for (Buy i : buyList) {
                 Float quan = i.getQuantity();
                 Float rate = i.getRate();
-                if(quan> maxQuan){
+                if (quan > maxQuan) {
                     maxQuan = quan;
+                }
+                if (rate > maxBuy) {
+                    maxBuy = rate;
                 }
                 entries.add(new BarEntry(rate, quan));
 
@@ -104,50 +103,45 @@ public class MainActivity extends AppCompatActivity {
             for (Sell i : sellList) {
                 Float quan = i.getQuantity();
                 Float rate = i.getRate();
-                if (quan > maxQuan){
+                if (quan > maxQuan) {
                     maxQuan = quan;
+                }
+                if (rate < minSell) {
+                    minSell = rate;
                 }
                 entries1.add(new BarEntry(rate, quan));
             }
 
 
-            BarDataSet dataSetBuy = new BarDataSet(entries, "Label");
-            BarDataSet dataSetSell = new BarDataSet(entries1, "Label");
+            BarDataSet dataSetSell = new BarDataSet(entries1, "Sell");
+            BarDataSet dataSetBuy = new BarDataSet(entries, "Buy");
             dataSetSell.setColor(Color.GREEN);
-            BarData barDataSell = new BarData(dataSetSell);
-            HorizontalBarChart chartSell = findViewById(R.id.sellchart);
             dataSetBuy.setColor(Color.RED);
-
+            BarData barDataSell = new BarData(dataSetSell);
             BarData barDataBuy = new BarData(dataSetBuy);
-            dataSetSell.setAxisDependency(YAxis.AxisDependency.RIGHT);
+            HorizontalBarChart chartSell = findViewById(R.id.sellchart);
             HorizontalBarChart chartBuy = findViewById(R.id.buychart);
-            //chartBuy.getAxisRight().setDrawLabels(false);
-            chartBuy.setDescription(null);
-            chartSell.setDescription(null);
-            chartBuy.setData(barDataBuy);
-            chartSell.setData(barDataSell);
-            chartSell.getAxisLeft().setInverted(true);
-            chartSell.getAxisRight().setInverted(true);
-            YAxis yAxisBuy = chartBuy.getAxisLeft();
-            chartBuy.getAxisRight().setAxisMaximum(maxQuan);
-            chartSell.getAxisLeft().setAxisMaximum(maxQuan);
-            yAxisBuy.setAxisMaximum(maxQuan);
 
-            YAxis yAxisSell = chartSell.getAxisRight();
-            yAxisSell.setAxisMaximum(maxQuan);
-            //chartBuy.getAxisRight().setEnabled(false);
+            chartSell.setDescription(null);
+            chartBuy.setDescription(null);
+            chartSell.setData(barDataSell);
+            chartBuy.setData(barDataBuy);
+            chartSell.getAxisLeft().setInverted(true);
+            Log.d("MAXQUAN", String.valueOf(maxQuan));
+            Log.d("MINSELL", String.valueOf(minSell));
+            Log.d("MAXBUY", String.valueOf(maxBuy));
+            chartBuy.getAxisLeft().setAxisMaximum(maxQuan);
+            chartBuy.getAxisLeft().setAxisMinimum(0);
+            chartSell.getAxisLeft().setAxisMaximum(maxQuan);
+            chartSell.getAxisLeft().setAxisMinimum(0);
+
             chartBuy.getAxisLeft().setEnabled(false);
             chartSell.getAxisRight().setEnabled(false);
-            chartBuy.getLegend().setEnabled(false);
-            chartSell.getLegend().setEnabled(false);
 
-            /*chart.setDragEnabled(true);
-            //chart.setHighlightFullLineEnabled(true);
-            chart.setScaleXEnabled(true);
-            chart.setScaleYEnabled(true);
-            chart.setTouchEnabled(true);
-            chart.setPinchZoom(true);
-            chart.setScaleEnabled(true);*/
+            chartBuy.getLegend().setEnabled(true);
+            chartSell.getLegend().setEnabled(true);
+
+
             chartBuy.invalidate(); // refresh
             chartSell.invalidate();
         }
