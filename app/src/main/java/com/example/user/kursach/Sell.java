@@ -1,10 +1,12 @@
 
 package com.example.user.kursach;
 
+import android.support.annotation.NonNull;
+
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
-public class Sell {
+public class Sell implements Comparable<Sell> {
 
     @SerializedName("Quantity")
     @Expose
@@ -29,4 +31,8 @@ public class Sell {
         this.rate = rate;
     }
 
+    @Override
+    public int compareTo(@NonNull Sell o) {
+        return (int) (this.rate - o.rate);
+    }
 }

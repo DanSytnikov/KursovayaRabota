@@ -10,4 +10,7 @@ import retrofit2.http.Query;
 public interface GETinterface {
     @GET("/api/v1.1/public/getorderbook")
     Call<Bittrex> getData(@Query("market") String market, @Query("type") String type);
+
+    @GET("/api/v1.1/public/getmarkets")
+    Call<BittrexMarketClass> getBittrexMarket();
 }
