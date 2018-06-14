@@ -19,7 +19,9 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:background="@android:drawable/btn_dropdown"
-            android:spinnerMode="dropdown" />
+            android:spinnerMode="dropdown">
+
+        </Spinner>
 
         <Spinner
             android:id="@+id/spinnerRight"

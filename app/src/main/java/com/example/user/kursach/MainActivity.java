@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -32,14 +33,14 @@ public class MainActivity extends AppCompatActivity {
     public static String TAG = "MainActivity";
     public GETinterface getInterface;
     public Bittrex data;
-    public Spinner dropdown = findViewById(R.id.spinnerLeft);
+    public String marketType = "USDT-BTC";
     public Retrofit retrofit;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        Spinner dropdown = (Spinner)findViewById(R.id.spinnerLeft);
 
         retrofit = new Retrofit.Builder()
                 .baseUrl("https://bittrex.com") //Базовая часть адреса
@@ -47,20 +48,8 @@ public class MainActivity extends AppCompatActivity {
                 .build();
         getInterface = retrofit.create(GETinterface.class); //Создаем объект, при помощи которого будем выполнять запросы
 
-        ArrayList<String> marketList = new ArrayList();
-        Call<BittrexMarketClass> marketCall = getInterface.getBittrexMarket();
-        Response<BittrexMarketClass> marketRes = null;
-        try {
-            marketRes = marketCall.execute();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        List<BittrexMarketResponse> marketResponses = marketRes.body().getResult();
-        for (BittrexMarketResponse i : marketResponses){
-            marketList.add(i.getMarketName());
-        }
-        ArrayAdapter<String> adapter = new ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item);
-        dropdown.setAdapter(adapter);
+BittrexMarket bittrexMarket = new BittrexMarket();
+bittrexMarket.execute();
         BittrexAPI bittrexAPI = new BittrexAPI();
         bittrexAPI.execute();
     }
@@ -94,8 +83,12 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(ArrayList<String> marketList) {
             super.onPostExecute(marketList);
-            ArrayAdapter adapter = new ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item);
+            ArrayAdapter adapter = new ArrayAdapter<String>(MainActivity.this, android.R.layout.simple_spinner_dropdown_item, marketList);
+            Spinner dropdown = findViewById(R.id.spinnerLeft);
             dropdown.setAdapter(adapter);
+            /*dropdown.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener){
+                onIte
+            };*/
         }
     }
     class BittrexAPI extends AsyncTask<Void, Response<Bittrex>, Response<Bittrex>> {
@@ -106,7 +99,7 @@ public class MainActivity extends AppCompatActivity {
             Response<Bittrex> res = null;
             while (!isCancelled()) {
                 try {
-                    Call<Bittrex> responseCall = getInterface.getData("USDT-BTC", "both");
+                    Call<Bittrex> responseCall = getInterface.getData(marketType, "both");
                     res = responseCall.execute();
                     publishProgress(res);
                     Thread.sleep(3000);
