@@ -10,24 +10,24 @@ public class Sell implements Comparable<Sell> {
 
     @SerializedName("Quantity")
     @Expose
-    private Float quantity;
+    private Double quantity;
     @SerializedName("Rate")
     @Expose
-    private Float rate;
+    private Double rate;
 
-    public Float getQuantity() {
+    public Double getQuantity() {
         return quantity;
     }
 
-    public void setQuantity(Float quantity) {
+    public void setQuantity(Double quantity) {
         this.quantity = quantity;
     }
 
-    public Float getRate() {
+    public Double getRate() {
         return rate;
     }
 
-    public void setRate(Float rate) {
+    public void setRate(Double rate) {
         this.rate = rate;
     }
 

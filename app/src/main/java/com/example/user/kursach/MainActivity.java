@@ -11,6 +11,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Spinner;
 import android.widget.TextView;
 
+import com.github.mikephil.charting.charts.BarChart;
 import com.github.mikephil.charting.charts.HorizontalBarChart;
 import com.github.mikephil.charting.data.BarData;
 import com.github.mikephil.charting.data.BarDataSet;
@@ -18,6 +19,7 @@ import com.github.mikephil.charting.data.BarEntry;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -33,7 +35,7 @@ public class MainActivity extends AppCompatActivity {
     public static String TAG = "MainActivity";
     public GETinterface getInterface;
     public Bittrex data;
-    public String marketType = "USDT-BTC";
+    public String marketType = "ETH-BAT";
     public Retrofit retrofit;
 
     @Override
@@ -81,14 +83,32 @@ bittrexMarket.execute();
         }
 
         @Override
-        protected void onPostExecute(ArrayList<String> marketList) {
+        protected void onPostExecute(final ArrayList<String> marketList) {
             super.onPostExecute(marketList);
+            Collections.sort(marketList);
             ArrayAdapter adapter = new ArrayAdapter<String>(MainActivity.this, android.R.layout.simple_spinner_dropdown_item, marketList);
             Spinner dropdown = findViewById(R.id.spinnerLeft);
             dropdown.setAdapter(adapter);
-            /*dropdown.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener){
-                onIte
-            };*/
+            dropdown.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                @Override
+                public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                    Log.d("POSITION", String.valueOf(position));
+                    HorizontalBarChart brBuy = findViewById(R.id.buychart);
+                    HorizontalBarChart brSell = findViewById(R.id.sellchart);
+                    brBuy.fitScreen();
+                    //brBuy.zoomOut();
+                    brSell.fitScreen();
+                    //brSell.resetZoom();
+                    marketType = (String) parent.getItemAtPosition(position);
+                   /* brSell.invalidate();
+                    brBuy.invalidate();*/
+                }
+
+                @Override
+                public void onNothingSelected(AdapterView<?> parent) {
+                    marketType = "USDT-BTC";
+                }
+            });
         }
     }
     class BittrexAPI extends AsyncTask<Void, Response<Bittrex>, Response<Bittrex>> {
@@ -129,8 +149,8 @@ bittrexMarket.execute();
             List<BarEntry> entries1 = new ArrayList<>();
             int c = 0;
             for (Buy i : buyList) {
-                Float quan = abs(i.getQuantity());
-                Float rate = abs(i.getRate());
+                Float quan = i.getQuantity().floatValue();
+                Float rate = i.getRate().floatValue();
                 if (quan > maxQuan) {
                     maxQuan = quan;
                 }
@@ -141,8 +161,8 @@ bittrexMarket.execute();
             }
             Log.e("sadaw", String.valueOf(c));
             for (Sell i : sellList) {
-                Float quan = i.getQuantity();
-                Float rate = i.getRate();
+                Float quan = i.getQuantity().floatValue();
+                Float rate = i.getRate().floatValue();
                 if (quan > maxQuan) {
                     maxQuan = quan;
                 }
@@ -160,7 +180,7 @@ bittrexMarket.execute();
             BarDataSet dataSetSell = new BarDataSet(entries1, "Sell");
             BarDataSet dataSetBuy = new BarDataSet(entries, "Buy");
             dataSetSell.setColor(Color.GREEN);
-            dataSetBuy.setColor(Color.RED);
+            dataSetBuy.setColor(Color.GREEN);
             BarData barDataSell = new BarData(dataSetSell);
             BarData barDataBuy = new BarData(dataSetBuy);
             HorizontalBarChart chartSell = findViewById(R.id.sellchart);
@@ -172,23 +192,19 @@ bittrexMarket.execute();
             chartBuy.setData(barDataBuy);
             chartSell.getAxisLeft().setInverted(true);
             chartBuy.getAxisLeft().setAxisMaximum(maxQuan);
+            chartBuy.getAxisRight().setAxisMinimum(0);
             chartBuy.getAxisLeft().setAxisMinimum(0);
             chartSell.getAxisLeft().setAxisMaximum(maxQuan);
             chartSell.getAxisLeft().setAxisMinimum(0);
 
             chartBuy.getAxisLeft().setEnabled(false);
             chartSell.getAxisRight().setEnabled(false);
-            chartBuy.setFitBars(true);
-            barDataBuy.setBarWidth(1f);
-            barDataSell.setBarWidth(1f);
+
+            barDataBuy.setBarWidth(10f);
+            barDataSell.setBarWidth(10f);
             chartBuy.getLegend().setEnabled(true);
             chartSell.getLegend().setEnabled(true);
 
-            chartBuy.setTouchEnabled(true);
-            chartBuy.setDragEnabled(true);
-            chartBuy.setHighlightPerDragEnabled(true);
-            chartBuy.setHighlightPerTapEnabled(true);
-            chartBuy.setMaxHighlightDistance(100);
 
 
             chartSell.invalidate();

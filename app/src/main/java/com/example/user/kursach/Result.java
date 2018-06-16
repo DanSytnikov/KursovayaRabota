@@ -1,4 +1,3 @@
-
 package com.example.user.kursach;
 
 import com.google.gson.annotations.Expose;
