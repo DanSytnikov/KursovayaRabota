@@ -1,5 +1,5 @@
 
-package com.example.user.kursach;
+package com.example.user.kursach.BittrexPackage;
 
 import android.support.annotation.NonNull;
 

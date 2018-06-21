@@ -1,4 +1,4 @@
-package com.example.user.kursach;
+package com.example.user.kursach.BittrexPackage;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
