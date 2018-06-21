@@ -245,8 +245,8 @@ public class MainActivity extends AppCompatActivity {
         protected void onProgressUpdate(Response<Bittrex>... bittrexResponse) {
             super.onProgressUpdate(bittrexResponse);
             data = bittrexResponse[0].body();
-            List<Buy> buyList = data.getResult().getBuy();
-            Collections.sort(buyList);
+            List<Buy> buyList = data.getResult().getBuy(); // Creating of bids' container
+            Collections.sort(buyList); //sorting to avoid rendering crashes
             Collections.max(buyList);
             List<Sell> sellList = data.getResult().getSell();
 
