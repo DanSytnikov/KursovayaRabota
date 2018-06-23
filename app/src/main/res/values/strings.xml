@@ -3,10 +3,10 @@
 
     <string-array name="query_suggestions">
         <item>USDT-BTC</item>
-        <item>USDT-ETC</item>
-        <item>USDT-XRP</item>
-        <item>USDT-DASH</item>
+        <item>USDT-ETH</item>
         <item>USDT-BCH</item>
+        <item>USDT-BTG</item>
+        <item>USDT-DASH</item>
         <item>USDT-XMR</item>
         <item>USDT-LTC</item>
     </string-array>
@@ -18,10 +18,5 @@
     <string-array name="exchange">
         <item>Bittrex</item>
         <item>CEX</item>
-        <item>Tut</item>
-        <item>Mogla</item>
-        <item>Bit'</item>
-        <item>Vasha</item>
-        <item>BIRJA</item>
     </string-array>
 </resources>

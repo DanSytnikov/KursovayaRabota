@@ -1,11 +1,12 @@
 package com.example.user.kursach;
 
-import android.content.res.Configuration;
 import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -14,6 +15,7 @@ import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.user.kursach.BittrexPackage.Bittrex;
 import com.example.user.kursach.BittrexPackage.Buy;
@@ -22,6 +24,7 @@ import com.github.mikephil.charting.charts.HorizontalBarChart;
 import com.github.mikephil.charting.data.BarData;
 import com.github.mikephil.charting.data.BarDataSet;
 import com.github.mikephil.charting.data.BarEntry;
+import com.github.mikephil.charting.interfaces.datasets.IBarDataSet;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -32,8 +35,6 @@ import retrofit2.Call;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
-
-import static java.lang.Math.abs;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -46,15 +47,70 @@ public class MainActivity extends AppCompatActivity {
     BittrexAPI bittrexAPI;
     Spinner dropdown;
     Spinner exc;
+    boolean isToggledValues = false;
+    boolean firstRun = true;
+    boolean isShownBorders = false;
     int timeSleep = 3;
     ProgressBar pb;
     SeekBar sb;
-    HorizontalBarChart brBuy;
     HorizontalBarChart brSell;
     public String currentExch = "Bittrex";
     CEXAPI cexAPI;
     String symbol1 = "BTC";
     String symbol2 = "USD";
+    HorizontalBarChart mChart;
+
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.bar, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        mChart = findViewById(R.id.sellchart);
+        switch (item.getItemId()) {
+            case R.id.actionToggleValues: {
+                isToggledValues = !isToggledValues;
+                break;
+            }
+
+            case R.id.actionTogglePinch: {
+                if (mChart.isPinchZoomEnabled())
+                    mChart.setPinchZoom(false);
+                else
+                    mChart.setPinchZoom(true);
+
+                mChart.invalidate();
+                break;
+            }
+            case R.id.actionToggleAutoScaleMinMax: {
+                mChart.setAutoScaleMinMaxEnabled(!mChart.isAutoScaleMinMaxEnabled());
+                mChart.notifyDataSetChanged();
+                break;
+            }
+            case R.id.actionToggleBarBorders: {
+                isShownBorders = !isShownBorders;
+                break;
+            }
+            case R.id.animateX: {
+                mChart.animateX(3000);
+                break;
+            }
+            case R.id.animateY: {
+                mChart.animateY(3000);
+                break;
+            }
+            case R.id.animateXY: {
+
+                mChart.animateXY(3000, 3000);
+                break;
+            }
+
+        }
+        return true;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,8 +121,10 @@ public class MainActivity extends AppCompatActivity {
         sb.setOnSeekBarChangeListener(seekBarChangeListener);
         pushExchangeSpinner();
         pushBittrexSpinner();
-
-        if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
+        /***
+         * Settings for changing orientation
+         */
+      /*if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
             LinearLayout linearLayout = findViewById(R.id.spinners);
             LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) linearLayout.getLayoutParams();
             lp.height = 100;
@@ -81,14 +139,19 @@ public class MainActivity extends AppCompatActivity {
             LinearLayout lLOr = findViewById(R.id.lLOrient);
             lLOr.setOrientation(LinearLayout.HORIZONTAL);
         }
-
+*/
 
     }
 
+    /***
+     * Auto-update time setting
+     */
     private SeekBar.OnSeekBarChangeListener seekBarChangeListener = new SeekBar.OnSeekBarChangeListener() {
         @Override
         public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
             timeSleep = seekBar.getProgress();
+            TextView tv = findViewById(R.id.seekBarProgress);
+            tv.setText("" + seekBar.getProgress());
         }
 
         @Override
@@ -113,6 +176,9 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    /***
+     * Spinner of exchanges
+     */
     public void pushExchangeSpinner() {
         exc = findViewById(R.id.spinnerRight);
         ArrayAdapter adapterExch = new ArrayAdapter<String>(MainActivity.this, android.R.layout.simple_spinner_dropdown_item, getResources().getStringArray(R.array.exchange));
@@ -123,9 +189,7 @@ public class MainActivity extends AppCompatActivity {
                 Log.d("POSITION", String.valueOf(position));
                 setBittrexAPIcanceled();
                 setCexAPIcanceled();
-                brBuy = findViewById(R.id.buychart);
                 brSell = findViewById(R.id.sellchart);
-                brBuy.fitScreen();
                 brSell.fitScreen();
                 currentExch = (String) parent.getItemAtPosition(position);
                 switch (currentExch) {
@@ -159,6 +223,9 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    /***
+     * Spinner of markets
+     */
     public void pushBittrexSpinner() {
         dropdown = findViewById(R.id.spinnerLeft);
         ArrayAdapter adapter = new ArrayAdapter<String>(MainActivity.this, android.R.layout.simple_spinner_dropdown_item, getResources().getStringArray(R.array.query_suggestions));
@@ -167,9 +234,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 Log.d("POSITION", String.valueOf(position));
-                HorizontalBarChart brBuy = findViewById(R.id.buychart);
                 HorizontalBarChart brSell = findViewById(R.id.sellchart);
-                brBuy.fitScreen();
+                firstRun = true;
                 brSell.fitScreen();
                 marketType = (String) parent.getItemAtPosition(position);
                 switch (marketType) {
@@ -177,17 +243,29 @@ public class MainActivity extends AppCompatActivity {
                         symbol1 = "BTC";
                         symbol2 = "USD";
                         break;
-                    case "USDT-ETC":
+                    case "USDT-ETH":
                         symbol1 = "ETH";
                         symbol2 = "USD";
                         break;
-                    case "USDT-XRP":
-                        symbol1 = "XRP";
+                    case "USDT-BCH":
+                        symbol1 = "BCH";
+                        symbol2 = "USD";
+                        break;
+                    case "USDT-BTG":
+                        symbol1 = "BTG";
                         symbol2 = "USD";
                         break;
                     case "USDT-DASH":
                         symbol1 = "DASH";
                         symbol2 = "USD";
+                        break;
+                    case "USDT-XMR":
+                        firstRun = false;
+                        Toast.makeText(getBaseContext(),"Missing market", Toast.LENGTH_SHORT).show();
+                        break;
+                    case "USDT-LTC":
+                        firstRun = false;
+                        Toast.makeText(getBaseContext(),"Missing market", Toast.LENGTH_SHORT).show();
                         break;
                 }
             }
@@ -199,13 +277,9 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-
-    public void onClick(View view) {
-        BittrexAPI bittrexAPI = new BittrexAPI();
-        bittrexAPI.execute();
-    }
-
-
+    /***
+     * AsyncTask for Bittrex
+     */
     class BittrexAPI extends AsyncTask<Void, Response<Bittrex>, Response<Bittrex>> {
 
         @Override
@@ -255,9 +329,10 @@ public class MainActivity extends AppCompatActivity {
             float maxBuy = 0;
             List<BarEntry> entries = new ArrayList<>();
             List<BarEntry> entries1 = new ArrayList<>();
+            List<BarEntry> entriesEmbit = new ArrayList<>();
             int c = 0;
             for (Buy i : buyList) {
-                Float quan = i.getQuantity().floatValue();
+                Float quan = i.getQuantity().floatValue() * 1000;
                 Float rate = i.getRate().floatValue();
                 if (quan > maxQuan) {
                     maxQuan = quan;
@@ -265,11 +340,18 @@ public class MainActivity extends AppCompatActivity {
                 if (rate > maxBuy) {
                     maxBuy = rate;
                 }
-                entries.add(new BarEntry(rate, quan));
+                if (quan < 1000) {
+                    entries.add(new BarEntry(rate, quan));
+                } else {
+                    if (quan < 10000) {
+                        entriesEmbit.add(new BarEntry(rate, quan / 1000));
+                    }
+                }
+
             }
             Log.e("sadaw", String.valueOf(c));
             for (Sell i : sellList) {
-                Float quan = i.getQuantity().floatValue();
+                Float quan = i.getQuantity().floatValue() * 1000;
                 Float rate = i.getRate().floatValue();
                 if (quan > maxQuan) {
                     maxQuan = quan;
@@ -277,7 +359,11 @@ public class MainActivity extends AppCompatActivity {
                 if (rate < minSell) {
                     minSell = rate;
                 }
-                entries1.add(new BarEntry(rate, quan));
+                if (quan < 1000) {
+                    entries1.add(new BarEntry(rate, quan));
+                } else {
+                    entriesEmbit.add(new BarEntry(rate, quan / 1000));
+                }
             }
             TextView tv = findViewById(R.id.textView);
             tv.setText("MaxBuy:" + maxBuy + "  MinSell:" + minSell + "  MaxQuan:" + maxQuan);
@@ -287,45 +373,76 @@ public class MainActivity extends AppCompatActivity {
 
             BarDataSet dataSetSell = new BarDataSet(entries1, "Sell");
             BarDataSet dataSetBuy = new BarDataSet(entries, "Buy");
+            BarDataSet dataSetEmbit = new BarDataSet(entriesEmbit, "Embit");
+            dataSetEmbit.setColor(Color.BLACK);
             dataSetSell.setColor(Color.GREEN);
+            dataSetSell.setBarBorderColor(getResources().getColor(R.color.Black));
+            dataSetBuy.setColors(Color.BLACK);
             dataSetBuy.setColor(Color.RED);
-            BarData barDataSell = new BarData(dataSetSell);
-            BarData barDataBuy = new BarData(dataSetBuy);
-            HorizontalBarChart chartSell = findViewById(R.id.sellchart);
-            HorizontalBarChart chartBuy = findViewById(R.id.buychart);
-            chartBuy.getAxisLeft().setAxisMaximum(maxQuan);
-            chartSell.getAxisLeft().setAxisMaximum(maxQuan);
-            chartSell.setData(barDataSell);
-            chartBuy.setData(barDataBuy);
-            chartsSettings();
+            BarDataSet[] barDataSets = new BarDataSet[3];
+            barDataSets[0] = dataSetBuy;
+            barDataSets[1] = dataSetSell;
+            barDataSets[2] = dataSetEmbit;
 
+
+            BarData ld = new BarData(barDataSets);
+            HorizontalBarChart chartSell = findViewById(R.id.sellchart);
+            chartSell.setData(ld);
+            chartsSettings();
+            if (firstRun) {
+                chartSell.animateXY(3000, 3000);
+                chartSell.invalidate();
+                firstRun = false;
+            }
+            toggleValues(isToggledValues);
+            toggleBorders(isShownBorders);
             chartSell.invalidate();
-            chartBuy.invalidate(); // refresh
         }
 
         public void chartsSettings() {
             HorizontalBarChart chartSell = findViewById(R.id.sellchart);
-            HorizontalBarChart chartBuy = findViewById(R.id.buychart);
             chartSell.setDescription(null);
-            chartBuy.setDescription(null);
 
-            chartSell.getAxisLeft().setInverted(true);
-            chartBuy.getAxisRight().setAxisMinimum(0);
-            chartBuy.getAxisLeft().setAxisMinimum(0);   //Charts' settings
             chartSell.getAxisRight().setAxisMinimum(0);
             chartSell.getAxisLeft().setAxisMinimum(0);
 
-            chartBuy.getAxisLeft().setEnabled(false);
             chartSell.getAxisRight().setEnabled(false);
 
-            chartBuy.getLegend().setEnabled(false);
             chartSell.getLegend().setEnabled(false);
         }
 
-        @Override
-        protected void onPostExecute(Response<Bittrex> bittrexResponse) {
-            super.onPostExecute(bittrexResponse);
+        public void toggleValues(boolean isToggled) {
+            mChart = findViewById(R.id.sellchart);
+            if (isToggled) {
+                List<IBarDataSet> sets = mChart.getData()
+                        .getDataSets();
 
+                for (IBarDataSet iSet : sets) {
+
+                    IBarDataSet set = (BarDataSet) iSet;
+                    set.setDrawValues(true);
+                }
+
+            } else {
+                List<IBarDataSet> sets = mChart.getData()
+                        .getDataSets();
+
+                for (IBarDataSet iSet : sets) {
+
+                    IBarDataSet set = (BarDataSet) iSet;
+                    set.setDrawValues(false);
+                }
+            }
+        }
+
+        public void toggleBorders(boolean isToggled) {
+            if (isToggled) {
+                for (IBarDataSet set : mChart.getData().getDataSets())
+                    ((BarDataSet) set).setBarBorderWidth(1.f);
+            } else {
+                for (IBarDataSet set : mChart.getData().getDataSets())
+                    ((BarDataSet) set).setBarBorderWidth(0.f);
+            }
         }
     }
 
@@ -374,10 +491,12 @@ public class MainActivity extends AppCompatActivity {
             List<List<Double>> sellList = dataCEX.getAsks();
             List<BarEntry> entriesBuy = new ArrayList<>();
             List<BarEntry> entriesSell = new ArrayList<>();
+            List<BarEntry> entriesEmbit = new ArrayList<>();
 
-            for (List<Double> i : buyList) {
-                Float quan = i.get(1).floatValue();
-                Float rate = i.get(0).floatValue();
+
+            for (int i = 0; i < 35; i++) {
+                Float quan = buyList.get(i).get(1).floatValue();
+                Float rate = buyList.get(i).get(0).floatValue();
                 if (quan > maxQuan) {
                     maxQuan = quan;
                 }
@@ -385,19 +504,25 @@ public class MainActivity extends AppCompatActivity {
                     maxBuy = rate;
                 }
 
-                entriesBuy.add(new BarEntry(rate, quan));
-            }
+                if (quan < 1000) {
+                    entriesBuy.add(new BarEntry(rate, quan));
+                } else {
+                    entriesEmbit.add(new BarEntry(rate, quan / 1000));
+                }
 
-            for (List<Double> i : sellList) {
-                Float quan = i.get(1).floatValue();
-                Float rate = i.get(0).floatValue();
-                if (quan > maxQuan) {
-                    maxQuan = quan;
+                Float quanS = sellList.get(i).get(1).floatValue();
+                Float rateS = sellList.get(i).get(0).floatValue();
+                if (quanS > maxQuan) {
+                    maxQuan = quanS;
                 }
-                if (rate < minSell) {
-                    minSell = rate;
+                if (rateS < minSell) {
+                    minSell = rateS;
                 }
-                entriesSell.add(new BarEntry(rate, quan));
+                if (quanS < 1000) {
+                    entriesSell.add(new BarEntry(rateS, quanS));
+                } else {
+                    entriesEmbit.add(new BarEntry(rate, quanS / 1000));
+                }
             }
             TextView tv = findViewById(R.id.textView);
             tv.setText("MaxBuy:" + maxBuy + "  MinSell:" + minSell + "  MaxQuan:" + maxQuan);
@@ -407,44 +532,80 @@ public class MainActivity extends AppCompatActivity {
 
             BarDataSet dataSetSell = new BarDataSet(entriesSell, "Sell");
             BarDataSet dataSetBuy = new BarDataSet(entriesBuy, "Buy");
+            BarDataSet dataSetEmbit = new BarDataSet(entriesEmbit, "Embit");
+            BarDataSet[] barDataSets = new BarDataSet[3];
             dataSetSell.setColor(Color.GREEN);
             dataSetBuy.setColor(Color.RED);
-            BarData barDataSell = new BarData(dataSetSell);
-            BarData barDataBuy = new BarData(dataSetBuy);
-            HorizontalBarChart chartSell = findViewById(R.id.sellchart);
-            HorizontalBarChart chartBuy = findViewById(R.id.buychart);
-            chartBuy.getAxisLeft().setAxisMaximum(maxQuan);
-            chartSell.getAxisLeft().setAxisMaximum(maxQuan);
-            chartSell.setData(barDataSell);
-            chartBuy.setData(barDataBuy);
-            chartsSettings();
+            dataSetEmbit.setColor(Color.BLACK);
+            barDataSets[0] = dataSetBuy;
+            barDataSets[1] = dataSetSell;
+            barDataSets[2] = dataSetEmbit;
+            BarData ld = new BarData(barDataSets);
 
+            HorizontalBarChart chartSell = findViewById(R.id.sellchart);
+            chartSell.setData(ld);
+            chartsSettings();
+            if (firstRun) {
+                chartSell.animateXY(3000, 3000);
+                chartSell.invalidate();
+                firstRun = false;
+            }
+            toggleValues(isToggledValues);
+            toggleBorders(isShownBorders);
             chartSell.invalidate();
-            chartBuy.invalidate(); // refresh
+            chartSell.invalidate();
         }
 
         public void chartsSettings() {
             HorizontalBarChart chartSell = findViewById(R.id.sellchart);
-            HorizontalBarChart chartBuy = findViewById(R.id.buychart);
             chartSell.setDescription(null);
-            chartBuy.setDescription(null);
 
-            chartSell.getAxisLeft().setInverted(true);
-            chartBuy.getAxisRight().setAxisMinimum(0);
-            chartBuy.getAxisLeft().setAxisMinimum(0);   //Charts' settings
             chartSell.getAxisRight().setAxisMinimum(0);
             chartSell.getAxisLeft().setAxisMinimum(0);
 
-            chartBuy.getAxisLeft().setEnabled(false);
             chartSell.getAxisRight().setEnabled(false);
 
-            chartBuy.getLegend().setEnabled(false);
             chartSell.getLegend().setEnabled(false);
+        }
+
+        public void toggleValues(boolean isToggled) {
+            mChart = findViewById(R.id.sellchart);
+            if (isToggled) {
+                List<IBarDataSet> sets = mChart.getData()
+                        .getDataSets();
+
+                for (IBarDataSet iSet : sets) {
+
+                    IBarDataSet set = (BarDataSet) iSet;
+                    set.setDrawValues(true);
+                }
+
+            } else {
+                List<IBarDataSet> sets = mChart.getData()
+                        .getDataSets();
+
+                for (IBarDataSet iSet : sets) {
+
+                    IBarDataSet set = (BarDataSet) iSet;
+                    set.setDrawValues(false);
+                }
+            }
+        }
+
+        public void toggleBorders(boolean isToggled) {
+            if (isToggled) {
+                for (IBarDataSet set : mChart.getData().getDataSets())
+                    ((BarDataSet) set).setBarBorderWidth(1.f);
+            } else {
+                for (IBarDataSet set : mChart.getData().getDataSets())
+                    ((BarDataSet) set).setBarBorderWidth(0.f);
+            }
         }
     }
 
     @Override
     protected void onPause() {
+        Log.e("PROGRAMM", " on Pause");
         super.onPause();
         setBittrexAPIcanceled();
         setCexAPIcanceled();
@@ -452,8 +613,15 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onStop() {
+        Log.e("PROGRAMM", " on Stop");
         super.onStop();
-        setBittrexAPIcanceled();
+    }
+
+    @Override
+    protected void onRestart() {
         setCexAPIcanceled();
+        bittrexAPI = new BittrexAPI();
+        bittrexAPI.execute();
+        super.onRestart();
     }
 }
