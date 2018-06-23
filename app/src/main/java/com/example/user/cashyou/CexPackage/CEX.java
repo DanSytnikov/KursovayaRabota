@@ -1,4 +1,4 @@
-package com.example.user.kursach;
+package com.example.user.cashyou.CexPackage;
 
 import java.util.List;
 import com.google.gson.annotations.Expose;

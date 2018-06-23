@@ -1,4 +1,4 @@
-package com.example.user.kursach;
+package com.example.user.cashyou;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;

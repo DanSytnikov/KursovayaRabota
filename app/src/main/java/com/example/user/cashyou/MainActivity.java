@@ -1,4 +1,4 @@
-package com.example.user.kursach;
+package com.example.user.cashyou;
 
 import android.graphics.Color;
 import android.os.AsyncTask;
@@ -17,9 +17,11 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.user.kursach.BittrexPackage.Bittrex;
-import com.example.user.kursach.BittrexPackage.Buy;
-import com.example.user.kursach.BittrexPackage.Sell;
+import com.example.user.cashyou.BittrexPackage.Bittrex;
+import com.example.user.cashyou.BittrexPackage.Buy;
+import com.example.user.cashyou.BittrexPackage.Sell;
+import com.example.user.cashyou.CexPackage.CEX;
+import com.example.user.kursach.R;
 import com.github.mikephil.charting.charts.HorizontalBarChart;
 import com.github.mikephil.charting.data.BarData;
 import com.github.mikephil.charting.data.BarDataSet;
@@ -203,6 +205,7 @@ public class MainActivity extends AppCompatActivity {
                         bittrexAPI.execute();
                         break;
                     case "CEX":
+                        firstRun = true;
                         retrofit = new Retrofit.Builder()
                                 .baseUrl("https://cex.io") //Базовая часть адреса
                                 .addConverterFactory(GsonConverterFactory.create()) //Конвертер, необходимый для преобразования JSON'а в объекты

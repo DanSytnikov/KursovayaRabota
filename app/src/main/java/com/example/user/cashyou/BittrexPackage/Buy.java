@@ -1,12 +1,12 @@
 
-package com.example.user.kursach.BittrexPackage;
+package com.example.user.cashyou.BittrexPackage;
 
 import android.support.annotation.NonNull;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
-public class Sell implements Comparable<Sell> {
+public class Buy implements Comparable<Buy>{
 
     @SerializedName("Quantity")
     @Expose
@@ -31,8 +31,10 @@ public class Sell implements Comparable<Sell> {
         this.rate = rate;
     }
 
+
     @Override
-    public int compareTo(@NonNull Sell o) {
+    /*Issue with Bar-chart rendering on zooming https://github.com/PhilJay/MPAndroidChart/issues/718#event-550002344*/
+    public int compareTo(@NonNull Buy o) {
         return (int) (this.rate - o.rate);
     }
 }
